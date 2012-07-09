@@ -6,11 +6,11 @@ local width = 0
 local length = 0
 
 local function loadSettings()
-
 	file = io.open( "settings.txt", "r" )
+
 	while true do
 		line = file:read()
-		if line == nil then break end
+		if not line then break end
 
 		if line == "true" then
 			shouldOutput = true
@@ -19,28 +19,24 @@ local function loadSettings()
 		end
 
 		line = file:read()
-		if line == nil then break end
+		if not line then break end
 
 		width = tonumber(line)
 
 		line = file:read()
-		if line == nil then break end
+		if not line then break end
 
 		length = tonumber(line)
 
 		file:close()
-
 		return true
 	end
 
 	file:close()
-
 	return false
-
 end
 
 local function createSettings()
-
 	term.clear()
 	term.setCursorPos( 1,1 )
 	print( "Set the settings." )
@@ -83,31 +79,30 @@ local function createSettings()
 	term.clear()
 	term.setCursorPos( 1,1 )
 	print( "Ready to cycle" )
-
-
 end
 
-term.clear()
-term.setCursorPos( 1,1 )
-print( "Logger program starting..." )
+local function init()
+	term.clear()
+	term.setCursorPos( 1,1 )
+	print( "Logger program starting..." )
 
-if fs.exists( "settings.txt" ) then
-	if not loadSettings() then
+	if fs.exists( "settings.txt" ) then
+		if not loadSettings() then
+			createSettings()
+		end
+
+		term.clear()
+		term.setCursorPos( 1,1 )
+		print( "Ready to cycle" )
+
+	else
 		createSettings()
 	end
 
-	term.clear()
-	term.setCursorPos( 1,1 )
-	print( "Ready to cycle" )
-
-else
-	createSettings()
+	rednet.open( "right" )
 end
 
-rednet.open( "right" )
-
 local function tryMove( direction )
-
 	if direction == "down" then
 		if turtle.detectDown() then
 			turtle.digDown()
@@ -141,7 +136,6 @@ local function tryMove( direction )
 end
 
 local function plantTree()
-
 	turtle.select(1)
 	l = turtle.getItemCount(1)
 	turtle.placeDown()
@@ -161,7 +155,6 @@ local function plantTree()
 end
 
 local function harvestTree()
-
 	steps = 1
 	tryMove("forward")
 
@@ -175,11 +168,9 @@ local function harvestTree()
 		steps = steps - 1
 	end
 	plantTree()
-
 end
 
 local function checkTree()
-
 	if turtle.detect() then
 		tryMove( "down" )
 		harvestTree()
@@ -189,11 +180,9 @@ local function checkTree()
 			plantTree()
 		end
 	end
-
 end
 
 local function harvest()
-
 	turtle.select(1)
 	tryMove( "forward" )
 	tryMove( "up" )
@@ -202,15 +191,12 @@ local function harvest()
 	bump = false
 
 	for w=1, width do
-
 		for l=1, length do
-
 			if l~=length then
 				tryMove( "forward" )
 				tryMove( "forward" )
 				checkTree()
 			end
-
 		end
 
 		if w~=width then
@@ -233,9 +219,7 @@ local function harvest()
 
 			bump = not bump
 		end
-
 	end
-
 
 	--Return
 	if not bump then
@@ -272,7 +256,6 @@ local function harvest()
 	tryMove( "down" )
 	turtle.select(9)
 
-
 	--Drop off and resupply
 	if shouldOutput then
 		redstone.setOutput("left", true)
@@ -294,22 +277,23 @@ local function harvest()
 	end
 
 	print( "Ready to cycle" )
-
 end
 
-while true do
-	event, p1, p2 = os.pullEvent()
-
-	if event == "rednet_message" and p2 == "startLoging" then
-		harvest()
-	end
-
-	if event == "char" and p1 == "s" then
-		createSettings()
-	end
-
-	if event == "char" and p1 == "r" then
-		print("User overide, havest starting.")
-		harvest()
+local function startHarvesting()
+	while true do
+		event, p1, p2 = os.pullEvent()
+		if event == "rednet_message" and p2 == "startLogging" then
+			harvest()
+		end
+		if event == "char" and p1 == "s" then
+			createSettings()
+		end
+		if event == "char" and p1 == "r" then
+			print("User override, harvest starting")
+			harvest()
+		end
 	end
 end
+
+init()
+startHarvesting()
