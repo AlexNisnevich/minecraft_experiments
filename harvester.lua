@@ -155,10 +155,12 @@ local function plantTree()
 end
 
 local function harvestTree()
+  turtle.select(3)
+
   steps = 1
   tryMove("forward")
 
-  while turtle.detectUp() do
+  while turtle.detectUp() and turtle.compareUp() do
     tryMove( "up" )
     steps = steps + 1
   end
